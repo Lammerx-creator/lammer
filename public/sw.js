@@ -71,7 +71,10 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
-    const cached = await cache.match(request);
+    // Static assets are public and identical for every request. Some hosts emit
+    // Vary: Origin, while HTML crossorigin requests differ from install-time
+    // precache requests; that header must not prevent the first offline reload.
+    const cached = await cache.match(request, { ignoreVary: true });
     if (cached) return cached;
     const response = await fetch(request);
     if (response.ok && response.type === 'basic') await cache.put(request, response.clone());
