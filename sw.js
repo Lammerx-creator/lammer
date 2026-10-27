@@ -31,7 +31,11 @@ self.addEventListener('install', (event) => {
       throw new Error('Offline installation requires a production build.');
     }
     const cache = await caches.open(CACHE_NAME);
-    await cache.addAll([...new Set([...SHELL, ...assets])]);
+    const manifestResponse = await fetch(appUrl('offline-assets.json'), { cache: 'no-store' });
+    if (!manifestResponse.ok) throw new Error('Offline asset manifest is unavailable.');
+    const extra = await manifestResponse.json();
+    if (!Array.isArray(extra) || extra.some(path => typeof path !== 'string' || !/^(assets|pdfjs)\//.test(path) || path.includes('..'))) throw new Error('Invalid offline asset manifest.');
+    await cache.addAll([...new Set([...SHELL, ...assets, ...extra.map(appUrl)])]);
     await cache.put(INDEX_URL, response);
     await self.skipWaiting();
   })());
@@ -65,7 +69,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  const isAppAsset = url.pathname.startsWith(ASSETS_PATH) ||
+  const isAppAsset = url.pathname.startsWith(new URL('pdfjs/', scope).pathname) || url.pathname.startsWith(ASSETS_PATH) ||
     url.pathname.startsWith(ICONS_PATH) || url.href === appUrl('manifest.webmanifest');
   if (!isAppAsset) return;
 
