@@ -1,0 +1,32 @@
+services:
+  trainer:
+    build: .
+    restart: unless-stopped
+    environment:
+      PORT: '8080'
+      TRAINER_DATA_DIR: /app/data
+      TRAINER_AUTH_USER: ${TRAINER_AUTH_USER:?Set TRAINER_AUTH_USER in .env}
+      TRAINER_AUTH_PASSWORD: ${TRAINER_AUTH_PASSWORD:?Set TRAINER_AUTH_PASSWORD in .env}
+    volumes:
+      - trainer_data:/app/data
+    stop_grace_period: 15s
+  https:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Set APP_DOMAIN in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      trainer:
+        condition: service_healthy
+volumes:
+  trainer_data:
+  caddy_data:
+  caddy_config:

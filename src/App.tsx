@@ -1,3 +1,4 @@
+import { PdfTrainer } from './components/PdfTrainer';
 import { useEffect, useRef, useState } from 'react';
 import { BookOpen, LayoutDashboard, GraduationCap, ListChecks, Headphones, Mic, ChartNoAxesCombined, Settings2, ArrowUpRight, ArrowRight, Flame, Target, Check, Menu, X, WifiOff, CircleHelp, Leaf, ChevronRight, LoaderCircle } from 'lucide-react';
 import type { AppState, Attempt, TopicId } from './types';
@@ -9,8 +10,9 @@ import { Grammar } from './components/Grammar';
 import { Vocabulary, Listening, Speaking } from './components/PracticeExtras';
 import { Statistics, DataSettings } from './components/ProgressPages';
 
-type Page = 'overview' | 'grammar' | 'practice' | 'vocabulary' | 'listening' | 'speaking' | 'stats' | 'settings';
+type Page = 'pdf' | 'overview' | 'grammar' | 'practice' | 'vocabulary' | 'listening' | 'speaking' | 'stats' | 'settings';
 const navigation: { id: Page; label: string; icon: typeof BookOpen; tag?: string }[] = [
+  { id: 'pdf', label: 'B2 Beruf · PDF', icon: BookOpen, tag: 'NEW' },
   { id: 'overview', label: 'Обзор', icon: LayoutDashboard },
   { id: 'grammar', label: 'Грамматика', icon: BookOpen },
   { id: 'practice', label: 'Упражнения', icon: ListChecks, tag: '50' },
@@ -22,7 +24,7 @@ const navigation: { id: Page; label: string; icon: typeof BookOpen; tag?: string
 
 export default function App() {
   const [state, setState] = useState<AppState>(emptyState);
-  const [page, setPage] = useState<Page>('overview');
+  const [page, setPage] = useState<Page>('pdf');
   const [mobileNav, setMobileNav] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
   const [loaded, setLoaded] = useState(false);
@@ -63,12 +65,13 @@ export default function App() {
       <button className="icon-button nav-close" aria-label="Закрыть меню" onClick={() => setMobileNav(false)}><X size={22}/></button>
       <div className="workspace-label">ЛИЧНЫЙ КАБИНЕТ <span>PERSONAL</span></div>
       <nav aria-label="Основная навигация">{navigation.map(({ id, label, icon: Icon, tag }) => <button key={id} className={`nav-item ${page === id ? 'active' : ''}`} onClick={() => id === 'practice' ? practice() : navigate(id)} aria-current={page === id ? 'page' : undefined}><Icon size={19} strokeWidth={1.7}/><span>{label}</span>{tag && <small>{tag}</small>}</button>)}</nav>
-      <div className="sidebar-bottom"><div className="level-note"><span className="level-icon"><Leaf size={21}/></span><div><strong>Шаг за шагом к B2</strong><p>Немецкий для вашей карьеры</p></div><span className="tiny-dot"/></div><button className={`nav-item ${page === 'settings' ? 'active' : ''}`} onClick={() => navigate('settings')}><Settings2 size={19}/><span>Данные и настройки</span></button><div className="local-note"><span className="tiny-dot"/> Ваши данные — на этом устройстве</div></div>
+      <div className="sidebar-bottom"><div className="level-note"><span className="level-icon"><Leaf size={21}/></span><div><strong>Шаг за шагом к B2</strong><p>Немецкий для вашей карьеры</p></div><span className="tiny-dot"/></div><button className={`nav-item ${page === 'settings' ? 'active' : ''}`} onClick={() => navigate('settings')}><Settings2 size={19}/><span>Данные и настройки</span></button><div className="local-note"><span className="tiny-dot"/> PDF и прогресс — в браузере</div></div>
     </aside>
     <div className="workspace">
       <header className="topbar"><div className="breadcrumb"><button className="icon-button mobile-menu" aria-label="Открыть меню" onClick={() => setMobileNav(true)}><Menu size={22}/></button><span>Моё обучение</span><ChevronRight size={14}/><strong>{title}</strong></div><div className="topbar-right">{!online ? <span className="connection"><WifiOff size={14}/> Офлайн</span> : <span className="connection"><span className="tiny-dot"/> Личное пространство</span>}<span className="level-pill">B1 <span>→</span> C1</span><div className="avatar" aria-label="Личный профиль">Я</div></div></header>
       <main id="main-content">{storageError && <div className="storage-warning" role="alert">{storageError} <button onClick={() => navigate('settings')}>Экспортировать данные <ArrowUpRight size={13}/></button></div>}
         {!loaded && !storageError ? <div className="loading-state"><LoaderCircle className="spin"/> Открываем ваше пространство…</div> : <>
+          {page === 'pdf' && <PdfTrainer/>}
           {page === 'overview' && <Dashboard state={state} onPractice={practice} onNavigate={navigate}/>}
           {page === 'grammar' && <Grammar onPractice={topic => practice(undefined, topic)}/>}
           {page === 'practice' && <Training key={session} initialId={initialExercise} initialTopic={initialTopic} onAttempt={record} onFinish={() => navigate('stats')}/>}
@@ -78,7 +81,7 @@ export default function App() {
           {page === 'stats' && <Statistics state={state} onPractice={id => practice(id)}/>}
           {page === 'settings' && <DataSettings state={state} onChange={setState}/>}
         </>}
-        <footer className="page-footer"><span>DeutschTrainer <span className="footer-dot">·</span> Маленькие шаги. Большие возможности.</span><span>{storageError ? 'Хранение недоступно' : saving ? 'Сохраняем…' : loaded ? <><Check size={13}/> Сохранено на устройстве</> : 'Загрузка…'}</span></footer>
+        <footer className="page-footer"><span>DeutschTrainer <span className="footer-dot">·</span> Маленькие шаги. Большие возможности.</span><span>{page === 'pdf' ? 'PDF: локальное хранение в браузере' : storageError ? 'Хранение недоступно' : saving ? 'Сохраняем…' : loaded ? <><Check size={13}/> Сохранено на устройстве</> : 'Загрузка…'}</span></footer>
       </main>
     </div>
   </div>;
